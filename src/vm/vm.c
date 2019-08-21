@@ -347,6 +347,12 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	      break;
 	    }
 
+	  if(vm->registers[VM_R16].unsigned_interger == 0)
+	    {
+	      vm->ip++;
+	      break;
+	    }
+
 	  if(vm->registers[VM_R16].unsigned_interger > 0)
 	    {
 	      vm->registers[VM_R16].unsigned_interger--;
@@ -390,7 +396,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 
       default:
 	{
-	  printf("invalid opcode: 0x%X", opcode);
+	  printf("invalid opcode: 0x%X\n", opcode);
 	  vm->halt = 1;
 	  break;
 	}
