@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "vm.h"
 
 int get_number(FILE* fp, size_t bits_to_read)

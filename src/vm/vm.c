@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #include "vm.h"
 
 vm_chunk_t *vm_parse(vm_struct_t *vm, int argc, char **argv )
@@ -61,18 +62,26 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
   int reg2 =   (int)VM_GET_REG2(inst->code);
   int imm =    (int)VM_GET_IMM(inst->code);
 
+  if(reg0 > VM_REG_COUNT || reg1 > VM_REG_COUNT || reg2 > VM_REG_COUNT)
+    {
+      vm->halt = 1;
+      return;
+    }
+
   switch (opcode)
     {
       case VM_HALT:
 	{
 	  printf("halt\n");
 	  vm->halt = 1;
+	  vm->ip++;
 	  break;
 	}
 
       case VM_NOP:
 	{
 	  printf("nop\n");
+	  vm->ip++;
 	  break;
 	}
 
@@ -80,15 +89,14 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("loadi %d, r%d\n", imm, reg0);
 	  vm->registers[reg0].signed_interger = imm;
+	  vm->ip++;
 	  break;
 	}
-      case VM_LOADF:
-	{
-	  intfloat32_t intfloat = { 0 };
-	  intfloat.i = imm;
 
-	  printf("loadf %f, r%d\n", intfloat.f, reg0);
-	  vm->registers[reg0].float_32bit = intfloat.f;
+      case VM_DUMP:
+	{
+	  printf("r%d = %i (0x%x)\n", reg0, vm->registers[reg0].signed_interger, vm->registers[reg0].unsigned_interger);
+	  vm->ip++;
 	  break;
 	}
 
@@ -96,6 +104,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("mov r%d, r%d\n", reg0, reg1 );
 	  memcpy(&vm->registers[reg1], &vm->registers[reg1], sizeof(vm_register_data_t));
+	  vm->ip++;
 	  break;
 	}
 
@@ -110,6 +119,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	    }
 
 	  vm->zflag = result;
+	  vm->ip++;
 	  break;
 	}
 
@@ -117,6 +127,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("shr r%d, %d\n", reg0, imm);
 	  vm->registers[reg0].unsigned_interger = (vm->registers[reg0].unsigned_interger >> imm);
+	  vm->ip++;
 	  break;
 	}
 
@@ -124,6 +135,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("shl r%d, %d\n", reg0, imm);
 	  vm->registers[reg0].unsigned_interger = vm->registers[reg0].unsigned_interger << imm;
+	  vm->ip++;
 	  break;
 	}
 
@@ -131,6 +143,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("xor r%d, r%d, r%d\n", reg0, reg1, reg2);
 	  vm->registers[reg2].unsigned_interger = vm->registers[reg0].unsigned_interger ^ vm->registers[reg1].unsigned_interger;
+	  vm->ip++;
 	  break;
 	}
 
@@ -138,6 +151,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("add r%d, r%d, r%d\n", reg0, reg1, reg2);
 	  vm->registers[reg2].signed_interger = vm->registers[reg0].signed_interger + vm->registers[reg1].signed_interger;
+	  vm->ip++;
 	  break;
 	}
 
@@ -145,6 +159,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("sub r%d, r%d, r%d\n", reg0, reg1, reg2);
 	  vm->registers[reg2].signed_interger = vm->registers[reg0].signed_interger - vm->registers[reg1].signed_interger;
+	  vm->ip++;
 	  break;
 	}
 
@@ -152,6 +167,15 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("mul r%d, r%d, r%d\n", reg0, reg1, reg2);
 	  vm->registers[reg2].signed_interger = vm->registers[reg0].signed_interger * vm->registers[reg1].signed_interger;
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_DIV:
+	{
+	  printf("div r%d, r%d, r%d\n", reg0, reg1, reg2);
+	  vm->registers[reg2].signed_interger = vm->registers[reg0].signed_interger / vm->registers[reg1].signed_interger;
+	  vm->ip++;
 	  break;
 	}
 
@@ -159,12 +183,14 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("inc r%d\n", reg0);
 	  vm->registers[reg0].signed_interger++;
+	  vm->ip++;
 	  break;
 	}
       case VM_DEC:
 	{
 	  printf("dec r%d\n", reg0 );
 	  vm->registers[reg0].signed_interger--;
+	  vm->ip++;
 	  break;
 	}
 
@@ -172,6 +198,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("and r%d, r%d, r%d\n", reg0, reg1, reg2 );
 	  vm->registers[reg2].signed_interger = vm->registers[reg0].signed_interger & vm->registers[reg1].signed_interger;
+	  vm->ip++;
 	  break;
 	}
 
@@ -179,6 +206,100 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("or r%d, r%d, r%d\n", reg0, reg1, reg2);
 	  vm->registers[reg2].unsigned_interger = vm->registers[reg0].unsigned_interger | vm->registers[reg1].unsigned_interger;
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_FLOAD:
+	{
+	  intfloat32_t intfloat = { 0 };
+	  intfloat.i = imm;
+
+	  if(isnan(intfloat.f) || isinf(intfloat.f))
+	    {
+	      vm->halt = 1;
+	      break;
+	    }
+
+	  printf("fload %f, r%d\n", intfloat.f, reg0);
+	  vm->fpu_registers[reg0].float_32bit = intfloat.f;
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_FDUMP:
+	{
+	  printf("r%d = %f (0x%X)\n", reg0, vm->fpu_registers[reg0].float_32bit, vm->fpu_registers[reg0].data );
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_FADD:
+	{
+	  printf("fadd r%d, r%d, r%d\n", reg0, reg1, reg2);
+	  vm->fpu_registers[reg2].float_32bit = vm->fpu_registers[reg0].float_32bit + vm->fpu_registers[reg1].float_32bit;
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_FSUB:
+	{
+	  printf("fsub r%d, r%d, r%d\n", reg0, reg1, reg2);
+	  vm->fpu_registers[reg2].float_32bit = vm->fpu_registers[reg0].float_32bit - vm->fpu_registers[reg1].float_32bit;
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_FMUL:
+	{
+	  printf("fmul r%d, r%d, r%d\n", reg0, reg1, reg2);
+	  vm->fpu_registers[reg2].float_32bit = vm->fpu_registers[reg0].float_32bit * vm->fpu_registers[reg1].float_32bit;
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_FDIV:
+	{
+	  printf("fdiv r%d, r%d, r%d\n", reg0, reg1, reg2);
+	  vm->fpu_registers[reg2].float_32bit = vm->fpu_registers[reg0].float_32bit / vm->fpu_registers[reg1].float_32bit;
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_FSQRT:
+	{
+	  printf("fsqrt r%d, r%d\n", reg0, reg1);
+	  vm->fpu_registers[reg1].float_32bit = sqrtf(vm->fpu_registers[reg0].float_32bit);
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_FRSQRT:
+	{
+	  printf("frsqrt r%d, r%d\n", reg0, reg1);
+
+	  if(isnan(vm->fpu_registers[reg0].float_32bit) || isinf(vm->fpu_registers[reg0].float_32bit))
+	    {
+	      vm->halt = 1;
+	      break;
+	    }
+
+	  intfloat32_t intfloat = { 0 };
+
+	  intfloat.f = vm->fpu_registers[reg0].float_32bit;
+
+	  float x2, y;
+	  const float threehalfs = 1.5F;
+
+	  x2 = vm->fpu_registers[reg0].float_32bit * 0.5F;
+	  intfloat.f  = vm->fpu_registers[reg0].float_32bit;
+	  intfloat.i  = 0x5f3759df - ( intfloat.i >> 1 );
+	  y  = intfloat.f;
+	  y  = y * ( threehalfs - ( x2 * y * y ) );
+
+	  vm->fpu_registers[reg1].float_32bit = y;
+
+	  vm->ip++;
 	  break;
 	}
 
@@ -195,12 +316,14 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	  vm->ip = (unsigned int)imm;
 	  break;
 	}
+
       case VM_RET:
 	{
 	  printf("ret\n");
 	  vm->ip = vm->ip_old;
 	  break;
 	}
+
       case VM_JUMP:
 	{
 	  if((unsigned int)imm > vm->instruction_count)
@@ -213,6 +336,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	  vm->ip = (unsigned int)imm;
 	  break;
 	}
+
       case VM_LOOP:
 	{
 	  printf("loop %i (r16 is %i)\n", imm, vm->registers[VM_R16].unsigned_interger );
@@ -231,6 +355,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 
 	  break;
 	}
+
       case VM_JZ:
 	{
 	  if(vm->zflag == 0)
@@ -246,6 +371,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	  vm->ip = (unsigned int)imm;
 	  break;
 	}
+
       case VM_JNZ:
 	{
 	  if(vm->zflag == 1)
@@ -289,7 +415,6 @@ void vm_execute( vm_struct_t *vm )
     {
       vm_chunk_t *ptr = &vm->code[vm->ip];
       vm_exec_instruction(vm, ptr);
-      vm->ip++;
     }
 
   if(vm->halt == 1)
@@ -297,7 +422,12 @@ void vm_execute( vm_struct_t *vm )
 
   printf("REG DUMP:\n");
 
-  for (int i = 0; i < VM_REG_COUNT ; i++) {
+  for (int i = 0; i < VM_REG_COUNT ; i++)
       printf("r%i = 0x%X\n", i, vm->registers[i].unsigned_interger );
-    }
+
+  printf("FPU REG DUMP:\n");
+
+  for(int i = 0; i < VM_FPU_REG_COUNT ; i++)
+      printf( "fr%i = %f (0x%X)\n", i, vm->fpu_registers[i].float_32bit, vm->fpu_registers[i].data );
+
 }
