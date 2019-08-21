@@ -76,7 +76,7 @@ unsigned int vm_stack_pop(vm_struct_t *vm)
       return result;
     }
 
-  return vm->stack[vm->registers[VM_R17].unsigned_interger--];
+  return vm->stack[--vm->registers[VM_R17].unsigned_interger];
 }
 
 void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
