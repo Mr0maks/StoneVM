@@ -103,7 +103,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_MOV:
 	{
 	  printf("mov r%d, r%d\n", reg0, reg1 );
-	  memcpy(&vm->registers[reg1], &vm->registers[reg1], sizeof(vm_register_data_t));
+	  memcpy(&vm->registers[reg1], &vm->registers[reg0], sizeof(vm_register_data_t));
 	  vm->ip++;
 	  break;
 	}
