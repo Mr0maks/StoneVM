@@ -3,9 +3,23 @@
 
 int main(int argc, char* argv[])
 {
-  unsigned int op_num = 0;
-  scanf("%d", &op_num);
-  vm_chunk_t *ptr = calloc(op_num, sizeof(vm_chunk_t));
+  if (argc < 2)
+  {
+    printf("ERROR: No file provided.\n");
+    exit(1);
+  }
+
+  FILE *f_in;
+  FILE *f_out;
+
+  if ((f_in=fopen(argv[1], "r")) == NULL) {
+    printf("ERROR: Cannot open input file.\n");
+    exit(1);
+  }
+  if ((f_out=fopen(argv[1], "wb")) == NULL) {
+    printf("ERROR: Cannot open output file.\n");
+    exit(1);
+  }
 
   char operators[23][8] = {"halt", "nop", "loadi", "loadf", "mov", "cmp", 
                            "shr", "shl", "xor", "add", "sub", 
@@ -13,15 +27,12 @@ int main(int argc, char* argv[])
                            "or", "call", "ret", "jump", "loop", 
                            "jz", "jnz"};
 
-  printf("* input start *\n");
   for (int i = 0; i < op_num; i++)
   {
     char op[8];
-    int op_code;
-    scanf("%s %x %x %x", &op, 
-                         &ptr[i].registers[VM_R0].unsigned_interger,
-                         &ptr[i].registers[VM_R1].unsigned_interger,
-                         &ptr[i].registers[VM_R2].unsigned_interger);
+    unsigned int op_code;
+    signed int r1, r2, r3;
+    scanf("%s %x %x %x", &op, &r1, &r2, &r3);
 
     for (int j = 0; j < 23; j++)
     {
@@ -32,27 +43,6 @@ int main(int argc, char* argv[])
       }
     }
 
-    //printf("vm: %d %X %X %X\n", op_code, ptr[i].registers[VM_R0].unsigned_interger, ptr[i].registers[VM_R1].unsigned_interger, ptr[i].registers[VM_R2].unsigned_interger);
 
-    ptr[i].opcode = op_code;
   }
-
-  printf("* input ended *\n");
-
-  vm_struct_t *vm = vm_init();
-
-  vm->code = ptr;
-  vm->instruction_count = op_num;
-
-  if(!ptr)
-  {
-    vm_clean(vm);
-    return;
-  }
-
-  vm_execute(vm);
-
-  vm_clean(vm);
-
-  free(ptr);
 }
