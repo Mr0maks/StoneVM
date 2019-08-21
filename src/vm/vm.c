@@ -54,6 +54,31 @@ vm_chunk_t *vm_parse(vm_struct_t *vm, int argc, char **argv )
   return ptr;
 }
 
+void vm_stack_push(vm_struct_t *vm, unsigned int data)
+{
+  if(vm->registers[VM_R17].unsigned_interger == VM_MAX_STACK_SIZE)
+    {
+      printf("vm: stack overflow!\n");
+      vm->halt = 1;
+    }
+
+  vm->stack[vm->registers[VM_R17].unsigned_interger++] = data;
+}
+
+unsigned int vm_stack_pop(vm_struct_t *vm)
+{
+  unsigned int result = 0;
+
+  if(vm->registers[VM_R17].unsigned_interger == 0)
+    {
+      printf("vm: stack underflow!\n");
+      vm->halt = 1;
+      return result;
+    }
+
+  return vm->stack[vm->registers[VM_R17].unsigned_interger--];
+}
+
 void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 {
   int opcode = (int)VM_GET_OPCODE(inst->code);
@@ -312,7 +337,9 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	    }
 
 	  printf("call %u\n", (unsigned int)imm);
-	  vm->ip_old = vm->ip;
+
+	  vm_stack_push(vm, vm->ip);
+
 	  vm->ip = (unsigned int)imm;
 	  break;
 	}
@@ -320,7 +347,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_RET:
 	{
 	  printf("ret\n");
-	  vm->ip = vm->ip_old;
+	  vm->ip = vm_stack_pop(vm);
 	  break;
 	}
 
@@ -391,6 +418,45 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 
 	  printf("jnz %i\n", imm);
 	  vm->ip = (unsigned int)imm;
+	  break;
+	}
+
+      case VM_XCHG:
+	{
+	  printf("xchg r%d, r%d\n", reg0, reg1);
+
+	  unsigned int register0 = vm->registers[reg0].unsigned_interger, register1 = vm->registers[reg1].unsigned_interger;
+
+	  vm->registers[reg0].unsigned_interger = register1;
+	  vm->registers[reg1].unsigned_interger = register0;
+
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_PUSH:
+	{
+	  printf("push r%d\n", reg0);
+
+	  vm_stack_push(vm, vm->registers[reg0].unsigned_interger);
+
+	  if(vm->halt == 1)
+	    break;
+
+	  vm->ip++;
+	  break;
+	}
+
+      case VM_POP:
+	{
+	  printf("pop r%d\n", reg0);
+
+	  vm->registers[reg0].unsigned_interger = vm_stack_pop(vm);
+
+	  if(vm->halt == 1)
+	    break;
+
+	  vm->ip++;
 	  break;
 	}
 

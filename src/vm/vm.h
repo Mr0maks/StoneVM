@@ -43,9 +43,11 @@ typedef enum
   VM_LOOP,
   VM_JZ,
   VM_JNZ,
-} vm_opcodes_t;
 
-//  __attribute__((packed))
+  VM_XCHG,
+  VM_PUSH,
+  VM_POP
+} vm_opcodes_t;
 
 enum
 {
@@ -66,7 +68,22 @@ enum
   VM_R14,
   VM_R15,
   VM_R16, // pc
-  VM_R17, // stack
+  VM_R17, // stack pointer
+  VM_R18,
+  VM_R19,
+  VM_R20,
+  VM_R21,
+  VM_R22,
+  VM_R23,
+  VM_R24,
+  VM_R25,
+  VM_R26,
+  VM_R27,
+  VM_R28,
+  VM_R29,
+  VM_R30,
+  VM_R31,
+  VM_R32,
   VM_REG_COUNT
 };
 
@@ -114,20 +131,18 @@ typedef union
   float f;
 } intfloat32_t;
 
-typedef struct vm_stack_s
-{
-  unsigned int data;
-  struct vm_stack_s *next;
-} vm_stack_t;
+typedef unsigned int vm_stack_t;
+
+#define VM_MAX_STACK_SIZE 1024 + 1// 1024 * 4 (unsigned int) = 4096 bytes
 
 typedef struct
 {
   int halt;
   int zflag;
   unsigned int ip;
-  unsigned int ip_old;
   unsigned int instruction_count;
   vm_chunk_t *code;
+  vm_stack_t stack[VM_MAX_STACK_SIZE];
   vm_register_data_t registers[VM_REG_COUNT];
   vm_fpu_registers_t fpu_registers[VM_FPU_REG_COUNT];
 } vm_struct_t;
