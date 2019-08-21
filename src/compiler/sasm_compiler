@@ -17,31 +17,37 @@ ops = (('halt', ''), ('nop', ''), ('loadi', '0i'), ('dump', '0'),
 f_in = open(sys.argv[1],'r')
 f_out =  open('bin.sbc', 'wb')
 
-
 labels = dict()
+
+parsed = list()
 for n,line in enumerate(f_in.readlines()):
     if line.strip() == '':
         continue
-        
-    inst = line.strip().split()
+
+    if line[0:2] == '//':
+        continue
+
+    line_parsed = line.strip()
+    
+    if line_parsed[-1] == ':':
+        labels[line_parsed[:-1]] = n
+        continue
+
+    parsed.append(line_parsed)
+
+for n,line in enumerate(parsed):        
+    inst = line.split()
     op = 0
     arg = [0,0,0,0]
-
-    if inst[0][-1] == ':':
-        labels[inst[0][:-1]] = n
-        print(1, 0, 0, 0, 0)
-        data = struct.pack('bbbbi', 1, 0, 0, 0, 0)
-        f_out.write(data)
-        continue
     
-    if inst[0] in ('jump', 'loop', 'jz', 'jnz', 'call'):
+    if inst[0].lower() in ('jump', 'loop', 'jz', 'jnz', 'call'):
         op_info = next(filter(lambda x: x[0] == inst[0], ops))
         print(ops.index(op_info), 0, 0, 0, labels[inst[1]])
         data = struct.pack('bbbbi', ops.index(op_info), 0, 0, 0, labels[inst[1]])
         f_out.write(data)
         continue
 
-    op_info = next(filter(lambda x: x[0] == inst[0], ops))
+    op_info = next(filter(lambda x: x[0] == inst[0].lower(), ops))
 
     op = ops.index(op_info)
 
