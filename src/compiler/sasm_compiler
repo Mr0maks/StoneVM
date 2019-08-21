@@ -2,27 +2,66 @@
 import struct
 import sys
 
-ops = ("halt", "nop", "loadi", "loadf", "mov", "cmp", 
-       "shr", "shl", "xor", "add", "sub", 
-       "mul", "div", "inc", "dec", "and", 
-       "or", "call", "ret", "jump", "loop", 
-       "jz", "jnz")
+ops = (('halt', ''), ('nop', ''), ('loadi', '0i'), ('loadf', '0f'), 
+       ('mov', '01'), ('cmp', '01'), ('shr', '0i'), ('shl', '0i'), 
+       ('xor', '012'), ('add', '012'), ('sub', '012'), ('mul', '012'), 
+       ('div', ''), ('inc', '0'), ('dec', '0'), ('and', '012'),
+       ('or', '012'), ('call', 'i'), ('ret', ''), ('jump', 'i'), 
+       ('loop', 'i'), ('jz', 'i'), ('jnz', 'i'))
+
+# ops = (('halt', ''), ('nop', ''), ('loadi', ''), ('dump', ''), 
+#        ('mov', ''), ('shr', ''), ('shl', ''), ('xor', ''), 
+#        ('add', ''), ('sub', ''), ('mul', ''), ('div', ''), 
+#        ('inc', ''), ('dec', ''), ('and', ''), ('or', ''), 
+#        ('fload', ''), ('fdump', ''), ('fadd', ''), ('fsub', ''), 
+#        ('fmul', ''), ('fdiv', ''), ('fsqrt', ''), ('frsqrt', ''), 
+#        ('cmp', ''), ('call', ''), ('ret', ''), ('jump', ''), 
+#        ('loop', ''), ('jz', ''), ('jnz', ''))
+
+
 
 f_in = open(sys.argv[1],'r')
 f_out =  open('bin.sbc', 'wb')
 
-for line in f_in.readlines():
-    inst = line.split()
-    op = ops.index(inst[0])
-    arg1 = int(inst[1])
-    arg2 = int(inst[2])
-    arg3 = int(inst[3])
-    if op != 3:
-        arg4 = int(inst[4])
-        data = struct.pack('bbbbi', op, arg1, arg2, arg3, arg4)
+
+labels = dict()
+for n,line in enumerate(f_in.readlines()):
+    inst = line.strip().split()
+    op = 0
+    arg = [0,0,0,0]
+
+    if inst[0][0] == ':':
+        labels[inst[0][1:]] = n
+        data = struct.pack('bbbbi', 1, 0, 0, 0, 0)
+        f_out.write(data)
+        continue
+    
+    if inst[0] in ('jump', 'loop', 'jz', 'jnz'):
+        op_info = next(filter(lambda x: x[0] == inst[0], ops))
+        data = struct.pack('bbbbi', ops.index(op_info), 0, 0, 0, labels[inst[1]])
+        f_out.write(data)
+        continue
+
+    op_info = next(filter(lambda x: x[0] == inst[0], ops))
+
+    op = ops.index(op_info)
+
+    for i in range(len(op_info[1])):
+        if op_info[1][i] in '012':
+            arg[i] = int(inst[i+1], 0)
+        elif op_info[1][i] == 'i':
+            arg[3] = int(inst[i+1])
+        elif op_info[1][i] == 'f':
+            arg[3] = float(inst[i+1])
+
+    print(op, arg[0], arg[1], arg[2], arg[3])
+
+    data = struct.pack('bbbb', op, arg[0], arg[1], arg[2])
+
+    if 'f' not in op_info[1]:
+        data += struct.pack('i', arg[3])
     else:
-        arg4 = float(inst[4])
-        data = struct.pack('bbbbf', op, arg1, arg2, arg3, arg4)
+        data += struct.pack('f', arg[3])
 
     f_out.write(data)
 
