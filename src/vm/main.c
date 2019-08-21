@@ -41,6 +41,7 @@ int main(int argc, char* argv[])
 
   printf("%d %d\n", inst_size, f_size);
 
+  printf("start loading\n");
   for(int chunk_num = 0; chunk_num < f_size/inst_size; chunk_num++)
   {
     char opcode, reg0, reg1, reg2;
@@ -57,9 +58,10 @@ int main(int argc, char* argv[])
     VM_SET_REG2(ptr[chunk_num].code, reg2);
     VM_SET_IMM(ptr[chunk_num].code, imm);
 
-    //printf("load_inst: %d %d %d %d %d\n", opcode,reg0,reg1,reg2,imm);
+    printf("%d %d %d %d %d\n", opcode,reg0,reg1,reg2,imm);
     //printf("%d %d\n", ftell(fp), feof(fp));
   }
+  printf("instructions loaded\n");
 
   fclose(fp);
 

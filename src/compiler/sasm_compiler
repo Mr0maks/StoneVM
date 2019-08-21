@@ -19,18 +19,23 @@ f_out =  open('bin.sbc', 'wb')
 
 labels = dict()
 for n,line in enumerate(f_in.readlines()):
+    if line == '':
+        continue
+        
     inst = line.strip().split()
     op = 0
     arg = [0,0,0,0]
 
     if inst[0][0] == ':':
         labels[inst[0][1:]] = n
+        print(1, 0, 0, 0, 0)
         data = struct.pack('bbbbi', 1, 0, 0, 0, 0)
         f_out.write(data)
         continue
     
     if inst[0] in ('jump', 'loop', 'jz', 'jnz', 'call'):
         op_info = next(filter(lambda x: x[0] == inst[0], ops))
+        print(ops.index(op_info), 0, 0, 0, labels[inst[1]])
         data = struct.pack('bbbbi', ops.index(op_info), 0, 0, 0, labels[inst[1]])
         f_out.write(data)
         continue
