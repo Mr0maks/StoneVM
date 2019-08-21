@@ -7,16 +7,14 @@ typedef enum
   //OTHER SHIT
   VM_HALT,
   VM_NOP,
-  VM_LOADI,
-  VM_LOADF,
-  VM_MOV,
-  VM_CMP,
 
-  //NAH
-  VM_SHR,
-  VM_SHL,
+  VM_LOADI,
+  VM_DUMP,
+  VM_MOV,
 
   //MATH
+  VM_SHR,
+  VM_SHL,
   VM_XOR,
   VM_ADD,
   VM_SUB,
@@ -27,6 +25,18 @@ typedef enum
   VM_AND,
   VM_OR,
 
+  //FPU MATH
+  VM_FLOAD,
+  VM_FDUMP,
+  VM_FADD,
+  VM_FSUB,
+  VM_FMUL,
+  VM_FDIV,
+  //
+  VM_FSQRT,
+  VM_FRSQRT,
+
+  VM_CMP,
   VM_CALL,
   VM_RET,
   VM_JUMP,
@@ -55,7 +65,8 @@ enum
   VM_R13,
   VM_R14,
   VM_R15,
-  VM_R16,
+  VM_R16, // pc
+  VM_R17, // stack
   VM_REG_COUNT
 };
 
@@ -74,8 +85,10 @@ enum
 
 typedef union
 {
-  float float_32bit[2];
-  double float64;
+  //float float_32bit[2];
+  //double float64;
+  float float_32bit;
+  unsigned int data;
 } vm_fpu_registers_t;
 
 typedef union
@@ -87,6 +100,7 @@ typedef union
   int signed_interger;
   unsigned int unsigned_interger;
   float float_32bit;
+  void *ptr;
 } vm_register_data_t;
 
 typedef struct
@@ -99,6 +113,12 @@ typedef union
   int i;
   float f;
 } intfloat32_t;
+
+typedef struct vm_stack_s
+{
+  unsigned int data;
+  struct vm_stack_s *next;
+} vm_stack_t;
 
 typedef struct
 {
