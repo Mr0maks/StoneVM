@@ -9,7 +9,8 @@ ops = (('halt', ''), ('nop', ''), ('loadi', '0i'), ('dump', '0'),
        ('fload', '0f'), ('fdump', '0'), ('fadd', '012'), ('fsub', '012'), 
        ('fmul', '012'), ('fdiv', '012'), ('fsqrt', '01'), ('frsqrt', '01'), 
        ('cmp', '01'), ('call', 'i'), ('ret', ''), ('jump', 'i'), 
-       ('loop', 'i'), ('jz', 'i'), ('jnz', 'i'))
+       ('loop', 'i'), ('jz', 'i'), ('jnz', 'i'), ('xchg', '01'), 
+       ('push', '0'), ('pop', '0'))
 
 
 
@@ -19,15 +20,15 @@ f_out =  open('bin.sbc', 'wb')
 
 labels = dict()
 for n,line in enumerate(f_in.readlines()):
-    if line == '':
+    if line.strip() == '':
         continue
         
     inst = line.strip().split()
     op = 0
     arg = [0,0,0,0]
 
-    if inst[0][0] == ':':
-        labels[inst[0][1:]] = n
+    if inst[0][-1] == ':':
+        labels[inst[0][:-1]] = n
         print(1, 0, 0, 0, 0)
         data = struct.pack('bbbbi', 1, 0, 0, 0, 0)
         f_out.write(data)
@@ -46,7 +47,10 @@ for n,line in enumerate(f_in.readlines()):
 
     for i in range(len(op_info[1])):
         if op_info[1][i] in '012':
-            arg[i] = int(inst[i+1], 0)
+            if inst[i+1][0] == 'r':
+                arg[i] = int(inst[i+1][1:])
+            else:
+                arg[i] = int(inst[i+1], 0)
         elif op_info[1][i] == 'i':
             arg[3] = int(inst[i+1])
         elif op_info[1][i] == 'f':
