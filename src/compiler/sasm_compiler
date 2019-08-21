@@ -1,0 +1,21 @@
+#!/usr/bin/python3
+import struct
+import sys
+
+ops = ("halt", "nop", "loadi", "loadf", "mov", "cmp", 
+       "shr", "shl", "xor", "add", "sub", 
+       "mul", "div", "inc", "dec", "and", 
+       "or", "call", "ret", "jump", "loop", 
+       "jz", "jnz")
+
+f_in = open(sys.argv[1],'r')
+f_out =  open('bin.sbc', 'wb')
+
+for line in f_in.readlines():
+    inst = line.split()
+    print(ops.index(inst[0]), int(inst[1]), int(inst[2]), int(inst[3]), inst[4])
+    data = struct.pack('bbbbi', ops.index(inst[0]), int(inst[1]), int(inst[2]), int(inst[3]), int(inst[4]))
+    f_out.write(data)
+
+f_in.close()
+f_out.close()
