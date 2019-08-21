@@ -2,21 +2,14 @@
 import struct
 import sys
 
-ops = (('halt', ''), ('nop', ''), ('loadi', '0i'), ('loadf', '0f'), 
-       ('mov', '01'), ('cmp', '01'), ('shr', '0i'), ('shl', '0i'), 
-       ('xor', '012'), ('add', '012'), ('sub', '012'), ('mul', '012'), 
-       ('div', ''), ('inc', '0'), ('dec', '0'), ('and', '012'),
-       ('or', '012'), ('call', 'i'), ('ret', ''), ('jump', 'i'), 
+ops = (('halt', ''), ('nop', ''), ('loadi', '0i'), ('dump', '0'), 
+       ('mov', '01'), ('shr', '0i'), ('shl', '0i'), ('xor', '012'), 
+       ('add', '012'), ('sub', '012'), ('mul', '012'), ('div', '012'), 
+       ('inc', '0'), ('dec', '0'), ('and', '012'), ('or', '012'), 
+       ('fload', '0f'), ('fdump', '0'), ('fadd', '012'), ('fsub', '012'), 
+       ('fmul', '012'), ('fdiv', '012'), ('fsqrt', '01'), ('frsqrt', '01'), 
+       ('cmp', '01'), ('call', 'i'), ('ret', ''), ('jump', 'i'), 
        ('loop', 'i'), ('jz', 'i'), ('jnz', 'i'))
-
-# ops = (('halt', ''), ('nop', ''), ('loadi', ''), ('dump', ''), 
-#        ('mov', ''), ('shr', ''), ('shl', ''), ('xor', ''), 
-#        ('add', ''), ('sub', ''), ('mul', ''), ('div', ''), 
-#        ('inc', ''), ('dec', ''), ('and', ''), ('or', ''), 
-#        ('fload', ''), ('fdump', ''), ('fadd', ''), ('fsub', ''), 
-#        ('fmul', ''), ('fdiv', ''), ('fsqrt', ''), ('frsqrt', ''), 
-#        ('cmp', ''), ('call', ''), ('ret', ''), ('jump', ''), 
-#        ('loop', ''), ('jz', ''), ('jnz', ''))
 
 
 
@@ -36,7 +29,7 @@ for n,line in enumerate(f_in.readlines()):
         f_out.write(data)
         continue
     
-    if inst[0] in ('jump', 'loop', 'jz', 'jnz'):
+    if inst[0] in ('jump', 'loop', 'jz', 'jnz', 'call'):
         op_info = next(filter(lambda x: x[0] == inst[0], ops))
         data = struct.pack('bbbbi', ops.index(op_info), 0, 0, 0, labels[inst[1]])
         f_out.write(data)
