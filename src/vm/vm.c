@@ -56,10 +56,11 @@ vm_chunk_t *vm_parse(vm_struct_t *vm, int argc, char **argv )
 
 void vm_stack_push(vm_struct_t *vm, unsigned int data)
 {
-  if(vm->registers[VM_R17].unsigned_interger == VM_MAX_STACK_SIZE)
+  if(vm->registers[VM_R17].unsigned_interger > VM_MAX_STACK_SIZE)
     {
       printf("vm: stack overflow!\n");
       vm->halt = 1;
+      return;
     }
 
   vm->stack[vm->registers[VM_R17].unsigned_interger++] = data;
@@ -67,13 +68,18 @@ void vm_stack_push(vm_struct_t *vm, unsigned int data)
 
 unsigned int vm_stack_pop(vm_struct_t *vm)
 {
-  unsigned int result = 0;
+  if(vm->registers[VM_R17].unsigned_interger > VM_MAX_STACK_SIZE)
+    {
+      printf("vm: stack overflow!\n");
+      vm->halt = 1;
+      return 0;
+    }
 
   if(vm->registers[VM_R17].unsigned_interger == 0)
     {
       printf("vm: stack underflow!\n");
       vm->halt = 1;
-      return result;
+      return 0;
     }
 
   return vm->stack[--vm->registers[VM_R17].unsigned_interger];
@@ -87,7 +93,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
   int reg2 =   (int)VM_GET_REG2(inst->code);
   int imm =    (int)VM_GET_IMM(inst->code);
 
-  if(reg0 > VM_REG_COUNT || reg1 > VM_REG_COUNT || reg2 > VM_REG_COUNT)
+  if(VM_CHECK_REG_OVERFLOW( reg0 ) || VM_CHECK_REG_OVERFLOW( reg1 ) || VM_CHECK_REG_OVERFLOW( reg2 ) )
     {
       vm->halt = 1;
       return;
@@ -240,21 +246,22 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	  intfloat32_t intfloat = { 0 };
 	  intfloat.i = imm;
 
+	  printf("fload %f, r%d\n", intfloat.f, reg0);
+
 	  if(isnan(intfloat.f) || isinf(intfloat.f))
 	    {
 	      vm->halt = 1;
 	      break;
 	    }
 
-	  printf("fload %f, r%d\n", intfloat.f, reg0);
-	  vm->fpu_registers[reg0].float_32bit = intfloat.f;
+	  vm->registers[reg0].float_32bit = intfloat.f;
 	  vm->ip++;
 	  break;
 	}
 
       case VM_FDUMP:
 	{
-	  printf("r%d = %f (0x%X)\n", reg0, vm->fpu_registers[reg0].float_32bit, vm->fpu_registers[reg0].data );
+	  printf("r%d = %f (0x%X)\n", reg0, vm->registers[reg0].float_32bit, vm->registers[reg0].unsigned_interger );
 	  vm->ip++;
 	  break;
 	}
@@ -262,7 +269,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_FADD:
 	{
 	  printf("fadd r%d, r%d, r%d\n", reg0, reg1, reg2);
-	  vm->fpu_registers[reg2].float_32bit = vm->fpu_registers[reg0].float_32bit + vm->fpu_registers[reg1].float_32bit;
+	  vm->registers[reg2].float_32bit = vm->registers[reg0].float_32bit + vm->registers[reg1].float_32bit;
 	  vm->ip++;
 	  break;
 	}
@@ -270,7 +277,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_FSUB:
 	{
 	  printf("fsub r%d, r%d, r%d\n", reg0, reg1, reg2);
-	  vm->fpu_registers[reg2].float_32bit = vm->fpu_registers[reg0].float_32bit - vm->fpu_registers[reg1].float_32bit;
+	  vm->registers[reg2].float_32bit = vm->registers[reg0].float_32bit - vm->registers[reg1].float_32bit;
 	  vm->ip++;
 	  break;
 	}
@@ -278,7 +285,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_FMUL:
 	{
 	  printf("fmul r%d, r%d, r%d\n", reg0, reg1, reg2);
-	  vm->fpu_registers[reg2].float_32bit = vm->fpu_registers[reg0].float_32bit * vm->fpu_registers[reg1].float_32bit;
+	  vm->registers[reg2].float_32bit = vm->registers[reg0].float_32bit * vm->registers[reg1].float_32bit;
 	  vm->ip++;
 	  break;
 	}
@@ -286,7 +293,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_FDIV:
 	{
 	  printf("fdiv r%d, r%d, r%d\n", reg0, reg1, reg2);
-	  vm->fpu_registers[reg2].float_32bit = vm->fpu_registers[reg0].float_32bit / vm->fpu_registers[reg1].float_32bit;
+	  vm->registers[reg2].float_32bit = vm->registers[reg0].float_32bit / vm->registers[reg1].float_32bit;
 	  vm->ip++;
 	  break;
 	}
@@ -294,7 +301,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_FSQRT:
 	{
 	  printf("fsqrt r%d, r%d\n", reg0, reg1);
-	  vm->fpu_registers[reg1].float_32bit = sqrtf(vm->fpu_registers[reg0].float_32bit);
+	  vm->registers[reg1].float_32bit = sqrtf(vm->registers[reg0].float_32bit);
 	  vm->ip++;
 	  break;
 	}
@@ -303,7 +310,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("frsqrt r%d, r%d\n", reg0, reg1);
 
-	  if(isnan(vm->fpu_registers[reg0].float_32bit) || isinf(vm->fpu_registers[reg0].float_32bit))
+	  if(isnan(vm->registers[reg0].float_32bit) || isinf(vm->registers[reg0].float_32bit))
 	    {
 	      vm->halt = 1;
 	      break;
@@ -311,18 +318,18 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 
 	  intfloat32_t intfloat = { 0 };
 
-	  intfloat.f = vm->fpu_registers[reg0].float_32bit;
+	  intfloat.f = vm->registers[reg0].float_32bit;
 
 	  float x2, y;
 	  const float threehalfs = 1.5F;
 
-	  x2 = vm->fpu_registers[reg0].float_32bit * 0.5F;
-	  intfloat.f  = vm->fpu_registers[reg0].float_32bit;
+	  x2 = vm->registers[reg0].float_32bit * 0.5F;
+	  intfloat.f  = vm->registers[reg0].float_32bit;
 	  intfloat.i  = 0x5f3759df - ( intfloat.i >> 1 );
 	  y  = intfloat.f;
 	  y  = y * ( threehalfs - ( x2 * y * y ) );
 
-	  vm->fpu_registers[reg1].float_32bit = y;
+	  vm->registers[reg1].float_32bit = y;
 
 	  vm->ip++;
 	  break;
@@ -330,13 +337,12 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 
       case VM_CALL:
 	{
+	  printf("call %u\n", (unsigned int)imm);
 	  if((unsigned int)imm > vm->instruction_count)
 	    {
 	      vm->halt = 1;
 	      break;
 	    }
-
-	  printf("call %u\n", (unsigned int)imm);
 
 	  vm_stack_push(vm, vm->ip);
 
@@ -347,19 +353,27 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_RET:
 	{
 	  printf("ret\n");
-	  vm->ip = vm_stack_pop(vm);
+	  unsigned int ip = vm_stack_pop(vm);
+
+	  if(ip > vm->instruction_count)
+	    {
+	      vm->halt = 1;
+	      break;
+	    }
+
+	  vm->ip = ip;
 	  break;
 	}
 
       case VM_JUMP:
 	{
+	  printf("jump %u\n", (unsigned int)imm);
 	  if((unsigned int)imm > vm->instruction_count)
 	    {
 	      vm->halt = 1;
 	      break;
 	    }
 
-	  printf("jump %u\n", (unsigned int)imm);
 	  vm->ip = (unsigned int)imm;
 	  break;
 	}
@@ -391,6 +405,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 
       case VM_JZ:
 	{
+	  printf("jz %i\n", imm);
 	  if(vm->zflag == 0)
 	    break;
 
@@ -400,13 +415,13 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	      break;
 	    }
 
-	  printf("jz %i\n", imm);
 	  vm->ip = (unsigned int)imm;
 	  break;
 	}
 
       case VM_JNZ:
 	{
+	  printf("jnz %i\n", imm);
 	  if(vm->zflag == 1)
 	    break;
 
@@ -416,7 +431,6 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	      break;
 	    }
 
-	  printf("jnz %i\n", imm);
 	  vm->ip = (unsigned int)imm;
 	  break;
 	}
@@ -495,11 +509,6 @@ void vm_execute( vm_struct_t *vm )
   printf("REG DUMP:\n");
 
   for (int i = 0; i < VM_REG_COUNT ; i++)
-      printf("r%i = 0x%X\n", i, vm->registers[i].unsigned_interger );
-
-  printf("FPU REG DUMP:\n");
-
-  for(int i = 0; i < VM_FPU_REG_COUNT ; i++)
-      printf( "fr%i = %f (0x%X)\n", i, vm->fpu_registers[i].float_32bit, vm->fpu_registers[i].data );
+      printf("r%i = %i %f (0x%X)\n", i, vm->registers[i].signed_interger, vm->registers[i].float_32bit, vm->registers[i].unsigned_interger );
 
 }

@@ -84,29 +84,8 @@ enum
   VM_R30,
   VM_R31,
   VM_R32,
-  VM_REG_COUNT
+  VM_REG_COUNT = VM_R32
 };
-
-enum
-{
-  VM_FPU_R0,
-  VM_FPU_R1,
-  VM_FPU_R2,
-  VM_FPU_R3,
-  VM_FPU_R4,
-  VM_FPU_R5,
-  VM_FPU_R6,
-  VM_FPU_R7,
-  VM_FPU_REG_COUNT
-};
-
-typedef union
-{
-  //float float_32bit[2];
-  //double float64;
-  float float_32bit;
-  unsigned int data;
-} vm_fpu_registers_t;
 
 typedef union
 {
@@ -144,7 +123,6 @@ typedef struct
   vm_chunk_t *code;
   vm_stack_t stack[VM_MAX_STACK_SIZE];
   vm_register_data_t registers[VM_REG_COUNT];
-  vm_fpu_registers_t fpu_registers[VM_FPU_REG_COUNT];
 } vm_struct_t;
 
 #define VM_MASK1(n,p)   ((~((~(uint64_t)0)<<(n)))<<(p))
@@ -155,6 +133,8 @@ typedef struct
 #define VM_REG1_SIZE 8
 #define VM_REG2_SIZE 8
 #define VM_IMM_SIZE 32
+#define VM_INSTRUCTION_SIZE ( VM_OPCODE_SIZE + VM_REG0_SIZE + VM_REG1_SIZE + VM_REG2_SIZE + VM_IMM_SIZE )
+#define VM_INSTRUCTION_SIZE_BYTES VM_INSTRUCTION_SIZE / 8
 
 #define VM_OPCODE_POS 0
 #define VM_REG0_POS (VM_OPCODE_POS + VM_OPCODE_SIZE)
@@ -176,6 +156,8 @@ typedef struct
 #define VM_SET_REG1(code, v) setarg(code, v, VM_REG1_POS, VM_REG1_SIZE)
 #define VM_SET_REG2(code, v) setarg(code, v, VM_REG2_POS, VM_REG2_SIZE)
 #define VM_SET_IMM(code, v) setarg(code, v, VM_IMM_POS, VM_IMM_SIZE)
+
+#define VM_CHECK_REG_OVERFLOW(reg) ( reg < VM_R0 || reg > VM_REG_COUNT )
 
 vm_chunk_t *vm_parse( vm_struct_t *vm, int argc, char **argv );
 vm_struct_t *vm_init(void);

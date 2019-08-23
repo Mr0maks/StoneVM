@@ -2,18 +2,18 @@
 #include <stdlib.h>
 #include "vm.h"
 
-int get_number(FILE* fp, size_t bits_to_read)
+uint64_t get_instruction(FILE* fp)
 {
-    int num;
-    if (fread(&num, bits_to_read/8, 1, fp) != 1) 
+  uint64_t result = 0;
+  if (fread(&result, sizeof(result), 1, fp) != 1)
     {
       if (feof(fp))
-        printf("ERROR: Premature end of file.\n");
-      else 
+	printf("ERROR: Premature end of file.\n");
+      else
         printf("ERROR: File read error.\n");
       exit(1);
     }
-    return num;
+  return result;
 }
 
 int main(int argc, char* argv[])
@@ -31,32 +31,32 @@ int main(int argc, char* argv[])
     exit(1);
   }
   
-  int inst_size = (VM_OPCODE_SIZE + VM_REG0_SIZE + VM_REG1_SIZE + VM_REG2_SIZE + VM_IMM_SIZE) / 8;
-
   fseek(fp, 0, SEEK_END);
   size_t f_size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
 
+  int inst_size = VM_INSTRUCTION_SIZE_BYTES;
+
   vm_chunk_t *ptr = calloc(f_size/inst_size, sizeof(vm_chunk_t));
 
-  printf("%d %d\n", inst_size, f_size);
+  printf("%d %ld\n", VM_INSTRUCTION_SIZE_BYTES, f_size);
 
   printf("start loading\n");
   for(int chunk_num = 0; chunk_num < f_size/inst_size; chunk_num++)
   {
+    uint64_t code = 0;
     char opcode, reg0, reg1, reg2;
     int imm;
-    opcode = get_number(fp, VM_OPCODE_SIZE);
-    reg0 = get_number(fp, VM_REG0_SIZE);
-    reg1 = get_number(fp, VM_REG1_SIZE);
-    reg2 = get_number(fp, VM_REG2_SIZE);
-    imm = get_number(fp, VM_IMM_SIZE);
 
-    VM_SET_OPCODE(ptr[chunk_num].code, opcode);
-    VM_SET_REG0(ptr[chunk_num].code, reg0);
-    VM_SET_REG1(ptr[chunk_num].code, reg1);
-    VM_SET_REG2(ptr[chunk_num].code, reg2);
-    VM_SET_IMM(ptr[chunk_num].code, imm);
+    code = get_instruction(fp);
+
+    opcode = (char)VM_GET_OPCODE(code);
+    reg0 = (char)VM_GET_REG0(code);
+    reg1 = (char)VM_GET_REG1(code);
+    reg2 = (char)VM_GET_REG2(code);
+    imm = (int)VM_GET_IMM(code);
+
+    ptr[chunk_num].code = code;
 
     printf("%d %d %d %d %d\n", opcode,reg0,reg1,reg2,imm);
     //printf("%d %d\n", ftell(fp), feof(fp));
