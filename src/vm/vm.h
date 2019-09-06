@@ -46,7 +46,9 @@ typedef enum
 
   VM_XCHG,
   VM_PUSH,
-  VM_POP
+  VM_POP,
+  VM_LOAD,
+  VM_STORE
 } vm_opcodes_t;
 
 enum
@@ -96,7 +98,6 @@ typedef union
   int signed_interger;
   unsigned int unsigned_interger;
   float float_32bit;
-  void *ptr;
 } vm_register_data_t;
 
 typedef struct
@@ -110,9 +111,21 @@ typedef union
   float f;
 } intfloat32_t;
 
-typedef unsigned int vm_stack_t;
+typedef uint32_t vm_stack_t;
+typedef uint32_t vm_memory_t;
 
-#define VM_MAX_STACK_SIZE 1024 + 1// 1024 * 4 (unsigned int) = 4096 bytes
+#define VM_MAGIC 0x58301337
+
+typedef struct
+{
+ uint32_t magic;
+ uint32_t entry;
+ uint32_t bytecode_len;
+ uint32_t reserved;
+} vm_header_t;
+
+#define VM_MAX_STACK_SIZE 1024 // 1024 * 4 ( uint32_t size ) = 4096 bytes
+#define VM_MAX_MEMORY_SIZE 16384 // 16384 * 4 ( uint32_t size ) = 65536 bytes
 
 typedef struct
 {
@@ -122,6 +135,7 @@ typedef struct
   unsigned int instruction_count;
   vm_chunk_t *code;
   vm_stack_t stack[VM_MAX_STACK_SIZE];
+  vm_memory_t memory[VM_MAX_MEMORY_SIZE];
   vm_register_data_t registers[VM_REG_COUNT];
 } vm_struct_t;
 
@@ -134,7 +148,7 @@ typedef struct
 #define VM_REG2_SIZE 8
 #define VM_IMM_SIZE 32
 #define VM_INSTRUCTION_SIZE ( VM_OPCODE_SIZE + VM_REG0_SIZE + VM_REG1_SIZE + VM_REG2_SIZE + VM_IMM_SIZE )
-#define VM_INSTRUCTION_SIZE_BYTES VM_INSTRUCTION_SIZE / 8
+#define VM_INSTRUCTION_SIZE_BYTES ( VM_INSTRUCTION_SIZE / 8 )
 
 #define VM_OPCODE_POS 0
 #define VM_REG0_POS (VM_OPCODE_POS + VM_OPCODE_SIZE)

@@ -56,7 +56,7 @@ vm_chunk_t *vm_parse(vm_struct_t *vm, int argc, char **argv )
 
 void vm_stack_push(vm_struct_t *vm, unsigned int data)
 {
-  if(vm->registers[VM_R17].unsigned_interger > VM_MAX_STACK_SIZE)
+  if(vm->registers[VM_R17].unsigned_interger >= VM_MAX_STACK_SIZE)
     {
       printf("vm: stack overflow!\n");
       vm->halt = 1;
@@ -68,7 +68,7 @@ void vm_stack_push(vm_struct_t *vm, unsigned int data)
 
 unsigned int vm_stack_pop(vm_struct_t *vm)
 {
-  if(vm->registers[VM_R17].unsigned_interger > VM_MAX_STACK_SIZE)
+  if(vm->registers[VM_R17].unsigned_interger >= VM_MAX_STACK_SIZE)
     {
       printf("vm: stack overflow!\n");
       vm->halt = 1;
@@ -338,7 +338,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_CALL:
 	{
 	  printf("call %u\n", (unsigned int)imm);
-	  if((unsigned int)imm > vm->instruction_count)
+      if((unsigned int)imm >= vm->instruction_count)
 	    {
 	      vm->halt = 1;
 	      break;
@@ -355,7 +355,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	  printf("ret\n");
 	  unsigned int ip = vm_stack_pop(vm);
 
-	  if(ip > vm->instruction_count)
+      if(ip >= vm->instruction_count)
 	    {
 	      vm->halt = 1;
 	      break;
@@ -368,7 +368,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
       case VM_JUMP:
 	{
 	  printf("jump %u\n", (unsigned int)imm);
-	  if((unsigned int)imm > vm->instruction_count)
+      if((unsigned int)imm >= vm->instruction_count)
 	    {
 	      vm->halt = 1;
 	      break;
@@ -382,7 +382,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	{
 	  printf("loop %i (r16 is %i)\n", imm, vm->registers[VM_R16].unsigned_interger );
 
-	  if((unsigned int)imm > vm->instruction_count)
+      if((unsigned int)imm >= vm->instruction_count)
 	    {
 	      vm->halt = 1;
 	      break;
@@ -409,7 +409,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	  if(vm->zflag == 0)
 	    break;
 
-	  if((unsigned int)imm > vm->instruction_count)
+      if((unsigned int)imm >= vm->instruction_count)
 	    {
 	      vm->halt = 1;
 	      break;
@@ -425,7 +425,7 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	  if(vm->zflag == 1)
 	    break;
 
-	  if((unsigned int)imm > vm->instruction_count)
+      if((unsigned int)imm >= vm->instruction_count)
 	    {
 	      vm->halt = 1;
 	      break;
@@ -473,6 +473,38 @@ void vm_exec_instruction(vm_struct_t *vm, vm_chunk_t *inst)
 	  vm->ip++;
 	  break;
 	}
+
+      case VM_LOAD:
+    {
+      printf("load r%d, [r%d]\n", reg0, reg1);
+      if(vm->registers[reg1].unsigned_interger >= VM_MAX_MEMORY_SIZE)
+      {
+          printf("vm: try to access addr 0x%u (max addr is 0x%u)\n", vm->registers[reg1].unsigned_interger, VM_MAX_MEMORY_SIZE);
+          vm->halt = 1;
+          break;
+      }
+
+      vm->registers[reg0].unsigned_interger = vm->memory[vm->registers[reg1].unsigned_interger];
+
+      vm->ip++;
+      break;
+    }
+
+      case VM_STORE:
+    {
+      printf("store r%d, [r%d]\n", reg0, reg1);
+      if(vm->registers[reg1].unsigned_interger >= VM_MAX_MEMORY_SIZE)
+      {
+          printf("vm: try to access addr 0x%u (max addr is 0x%u)\n", vm->registers[reg1].unsigned_interger, VM_MAX_MEMORY_SIZE);
+          vm->halt = 1;
+          break;
+      }
+
+      vm->memory[vm->registers[reg1].unsigned_interger] = vm->registers[reg0].unsigned_interger;
+
+      vm->ip++;
+      break;
+    }
 
       default:
 	{

@@ -14,7 +14,7 @@ OS=freebsd
 PROGRAMEXT=
 endif
 
-SRCDIR=src
+SRCDIR=src/vm
 
 NAME=stonevm
 
@@ -68,7 +68,7 @@ CFLAGS = $(BUILD_TYPE_CFLAGS) $(BASE_CFLAGS) $(OPT_CFLAGS) $(ARCH_CFLAGS)
 
 INCLUDE=-I. -I$(SRCDIR)
 
-LDFLAGS=-L.
+LDFLAGS=-L. -lm
 
 DO_CC=$(CC) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 
@@ -77,7 +77,7 @@ DO_CXX=$(CXX) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(DO_CC)
 
-SRC = $(wildcard src/*.c)
+SRC = $(wildcard $(SRCDIR)/*.c)
 
 OBJ := $(SRC:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
