@@ -119,7 +119,7 @@ typedef uint32_t vm_memory_t;
 typedef struct
 {
  uint32_t magic;
- uint32_t entry;
+ uint32_t memory_len;
  uint32_t bytecode_len;
  uint32_t reserved;
 } vm_header_t;

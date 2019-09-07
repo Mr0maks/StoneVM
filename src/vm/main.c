@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
       exit(1);
   }
 
-  size_t size_need = ((header.bytecode_len * 8) + ( (header.entry * 2) * sizeof(vm_memory_t) ) + sizeof(header));
+  size_t size_need = ((header.bytecode_len * VM_INSTRUCTION_SIZE_BYTES) + ( header.memory_len * sizeof(vm_memory_t) ) + sizeof(header));
 
   if( f_size != size_need )
   {
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
       exit(1);
   }
 
-  if((header.entry * 2) >= VM_MAX_MEMORY_SIZE)
+  if(header.memory_len >= VM_MAX_MEMORY_SIZE)
   {
       printf("ERROR: memory too big.\n");
       fclose(fp);
@@ -83,12 +83,12 @@ int main(int argc, char* argv[])
   }
 
   vm_chunk_t *ptr = calloc(header.bytecode_len, sizeof(vm_chunk_t));
-  vm_memory_t *mem_ptr = calloc(header.entry * 2, sizeof(vm_memory_t));
+  vm_memory_t *mem_ptr = calloc(header.memory_len, sizeof(vm_memory_t));
 
   printf("%d %ld\n", VM_INSTRUCTION_SIZE_BYTES, f_size);
 
   printf("start loading memory\n");
-  for(uint32_t mem_chnk = 0; mem_chnk < header.entry * 2; mem_chnk++)
+  for(uint32_t mem_chnk = 0; mem_chnk < header.memory_len; mem_chnk++)
   {
       uint32_t shit = get_memory_chunk(fp);
       printf("memory[%u] = 0x%x\n", mem_chnk, shit);
@@ -131,7 +131,7 @@ int main(int argc, char* argv[])
   }
 
   vm->code = ptr;
-  memcpy(&vm->memory, mem_ptr, (header.entry * 2) * sizeof(vm_memory_t));
+  memcpy(&vm->memory, mem_ptr, header.memory_len  * sizeof(vm_memory_t));
   vm->instruction_count = header.bytecode_len;
 
   vm_execute(vm);
