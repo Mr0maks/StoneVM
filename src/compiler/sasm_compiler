@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import struct
 import sys
+import shlex
 
 ops = (('halt', ''), ('nop', ''), ('loadi', '0i'), ('dump', '0'), 
        ('mov', '01'), ('shr', '0i'), ('shl', '0i'), ('xor', '012'), 
@@ -10,68 +11,128 @@ ops = (('halt', ''), ('nop', ''), ('loadi', '0i'), ('dump', '0'),
        ('fmul', '012'), ('fdiv', '012'), ('fsqrt', '01'), ('frsqrt', '01'), 
        ('cmp', '01'), ('call', 'i'), ('ret', ''), ('jump', 'i'), 
        ('loop', 'i'), ('jz', 'i'), ('jnz', 'i'), ('xchg', '01'), 
-       ('push', '0'), ('pop', '0'))
+       ('push', '0'), ('pop', '0'), ('load', '01'), ('store', '01'))
 
 
 
 f_in = open(sys.argv[1],'r')
-f_out =  open('bin.sbc', 'wb')
-
-labels = dict()
 
 parsed = list()
+
+# first pass
+macros = dict()
+deleted_lines = 0
 for n,line in enumerate(f_in.readlines()):
     if line.strip() == '':
         continue
 
-    if line[0:2] == '//':
+    if line.strip()[0:2] == '//':
         continue
 
-    line_parsed = line.strip()
+    line_trimmed = line.strip()
     
-    if line_parsed[-1] == ':':
-        labels[line_parsed[:-1]] = n
+    # for name,macro in macros.items():
+    #     line_trimmed = line_trimmed.replace(name, macro)
+    # 
+    # if line_trimmed[0] == '#':
+    #     # macros[line_trimmed.split()[1]] = line_trimmed.split(maxsplit=2)[2:][0]
+    #     if line_trimmed.split()[0][1:] == 'include':
+    #         f_incl = open(line_trimmed.split(maxsplit=1)[1:][0], 'r')
+    #         parsed.extend(map(lambda x: x.strip(), f_incl.readlines()))
+    #     continue
+
+    parsed.append(line_trimmed)
+
+print('\n'.join(parsed))
+
+# second pass
+labels = dict()
+
+# ДОБАВИТЬ ЛУП ДЛЯ ДАНННЫХ
+
+for n,line in enumerate(parsed):
+    if line.strip()[-1] == ':':
+        labels[line.strip()[:-1]] = n
+        parsed[n] = 'nop'
+
+data = bytes()
+code = bytes()
+
+section = 0
+op_count = 0
+
+data_len = 0
+
+for n,line in enumerate(parsed):
+    if line == '.data':
+        section = 1
+        continue
+    if line == '.code':
+        section = 2
         continue
 
-    parsed.append(line_parsed)
-
-for n,line in enumerate(parsed):        
     inst = line.split()
-    op = 0
-    arg = [0,0,0,0]
-    
-    if inst[0].lower() in ('jump', 'loop', 'jz', 'jnz', 'call'):
-        op_info = next(filter(lambda x: x[0] == inst[0], ops))
-        print(ops.index(op_info), 0, 0, 0, labels[inst[1]])
-        data = struct.pack('bbbbi', ops.index(op_info), 0, 0, 0, labels[inst[1]])
-        f_out.write(data)
-        continue
 
-    op_info = next(filter(lambda x: x[0] == inst[0].lower(), ops))
+    if section == 1:
+        data_len += 1
+        if inst[0] == '.byte':
+            for i in inst[1:]:
+                data += struct.pack('B', int(i, 0))
+        if inst[0] == '.short':
+            for i in inst[1:]:
+                data += struct.pack('H', int(i))
+        if inst[0] == '.long':
+            for i in inst[1:]:
+                data += struct.pack('I', int(i))
+        if inst[0] == '.quad':
+            for i in inst[1:]:
+                data += struct.pack('Q', int(i))
+        if inst[0] == '.ascii':
+            data += shlex.split(line)[1].encode('ascii')
+        if inst[0] == '.asciz':
+            data += shlex.split(line)[1].encode('ascii')+b'\x00'
 
-    op = ops.index(op_info)
+    if section == 2:
+        op_count += 1
+        op = 0
+        arg = [0,0,0,0]
+        
+        if inst[0].lower() in ('jump', 'loop', 'jz', 'jnz', 'call'):
+            op_info = next(filter(lambda x: x[0] == inst[0], ops))
+            print(ops.index(op_info), 0, 0, 0, labels[inst[1]]-(1+data_len))
+            code += struct.pack('bbbbi', ops.index(op_info), 0, 0, 0, labels[inst[1]]-(1+data_len))
+            continue
 
-    for i in range(len(op_info[1])):
-        if op_info[1][i] in '012':
-            if inst[i+1][0] == 'r':
-                arg[i] = int(inst[i+1][1:])
-            else:
-                arg[i] = int(inst[i+1], 0)
-        elif op_info[1][i] == 'i':
-            arg[3] = int(inst[i+1])
-        elif op_info[1][i] == 'f':
-            arg[3] = float(inst[i+1])
+        op_info = next(filter(lambda x: x[0] == inst[0].lower(), ops))
 
-    print(op, arg[0], arg[1], arg[2], arg[3])
+        op = ops.index(op_info)
 
-    data = struct.pack('bbbb', op, arg[0], arg[1], arg[2])
+        for i in range(len(op_info[1])):
+            if op_info[1][i] in '012':
+                if inst[i+1][0] == 'r':
+                    arg[i] = int(inst[i+1][1:])
+                else:
+                    arg[i] = int(inst[i+1], 0)
+            elif op_info[1][i] == 'i':
+                arg[3] = int(inst[i+1])
+            elif op_info[1][i] == 'f':
+                arg[3] = float(inst[i+1])
 
-    if 'f' not in op_info[1]:
-        data += struct.pack('i', arg[3])
-    else:
-        data += struct.pack('f', arg[3])
+        print(op, arg[0], arg[1], arg[2], arg[3])
 
-    f_out.write(data)
+        code += struct.pack('bbbb', op, arg[0], arg[1], arg[2])
+
+        if 'f' not in op_info[1]:
+            code += struct.pack('i', arg[3])
+        else:
+            code += struct.pack('f', arg[3])
 
 f_in.close()
+
+print((len(data) + (0 if len(data)%4 == 0 else (4-len(data)%4)))//4)
+print(op_count)
+
+f_out =  open('bin.sbc', 'wb')
+#f_out.write(struct.pack('IIII', 0x58301337, (len(data)+(8-len(data)%8))//8, op_count, 0) + data + b'\x00'*(8-len(data)%8) + code)
+f_out.write(struct.pack('IIII', 0x58301337, (len(data) + (0 if len(data)%4 == 0 else (4-len(data)%4)))//4, op_count, 0) + data + (b'\x00'* (0 if len(data)%4 == 0 else (4-len(data)%4))) + code)
 f_out.close()
