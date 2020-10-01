@@ -28,7 +28,7 @@ CC=clang
 CXX=clang++
 endif
 
-OPT_CFLAGS = -O2 -flto -funroll-loops -fno-omit-frame-pointer -fno-stack-protector -fPIC -Wall
+OPT_CFLAGS = -O2 -flto -fno-omit-frame-pointer -fPIC -Wall
 
 BASE_CFLAGS = -D__USE_GNU -std=gnu11 -DVERSION=\"$(VERSION)\"
 
