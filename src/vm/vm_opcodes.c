@@ -11,20 +11,13 @@ void vm_nop( vm_struct_t *vm )
 
 void vm_halt( vm_struct_t *vm )
 {
-    vm->halt = true;
-    vm->pc++;
+    vm_error(vm, "halt instuction called");
 }
 
 void vm_cmp( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
 
     if(vm->registers[reg0].unsigned_interger == vm->registers[reg1].unsigned_interger)
     {
@@ -36,14 +29,8 @@ void vm_cmp( vm_struct_t *vm )
 
 void vm_load( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
+    uint8_t reg0 = vm_read_register( vm );
     uint32_t imm = vm_read_uint32_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
 
     vm->registers[reg0].unsigned_interger = imm;
     vm->pc++;
@@ -51,14 +38,8 @@ void vm_load( vm_struct_t *vm )
 
 void vm_load_string( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
+    uint8_t reg0 = vm_read_register( vm );
     uint32_t imm = vm_read_uint32_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
 
     vm->registers[reg0].unsigned_interger = imm;
     vm->pc++;
@@ -66,14 +47,8 @@ void vm_load_string( vm_struct_t *vm )
 
 void vm_load_data( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
+    uint8_t reg0 = vm_read_register( vm );
     uint32_t imm = vm_read_uint32_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
 
     vm->registers[reg0].unsigned_interger = imm;
     vm->pc++;
@@ -81,14 +56,8 @@ void vm_load_data( vm_struct_t *vm )
 
 void vm_swap( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
 
     uint32_t register0 = vm->registers[reg0].unsigned_interger, register1 = vm->registers[reg1].unsigned_interger;
 
@@ -100,14 +69,8 @@ void vm_swap( vm_struct_t *vm )
 
 void vm_mov( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
 
     vm->registers[reg1] = vm->registers[reg0];
     vm->pc++;
@@ -115,15 +78,9 @@ void vm_mov( vm_struct_t *vm )
 
 void vm_add( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].signed_interger = (vm->registers[reg0].signed_interger + vm->registers[reg1].signed_interger);
     vm->pc++;
@@ -131,15 +88,9 @@ void vm_add( vm_struct_t *vm )
 
 void vm_sub( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].signed_interger = (vm->registers[reg0].signed_interger - vm->registers[reg1].signed_interger);
     vm->pc++;
@@ -147,15 +98,9 @@ void vm_sub( vm_struct_t *vm )
 
 void vm_mul( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].signed_interger = (vm->registers[reg0].signed_interger * vm->registers[reg1].signed_interger);
     vm->pc++;
@@ -163,20 +108,13 @@ void vm_mul( vm_struct_t *vm )
 
 void vm_div( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     if(vm->registers[reg0].signed_interger == 0 || vm->registers[reg1].signed_interger == 0)
     {
         vm_error(vm, "divide by zero");
-        return;
     }
 
     vm->registers[reg2].signed_interger = (vm->registers[reg0].signed_interger / vm->registers[reg1].signed_interger);
@@ -185,13 +123,7 @@ void vm_div( vm_struct_t *vm )
 
 void vm_inc( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
 
     vm->registers[reg0].unsigned_interger++;
     vm->pc++;
@@ -199,13 +131,7 @@ void vm_inc( vm_struct_t *vm )
 
 void vm_dec( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
 
     vm->registers[reg0].unsigned_interger--;
     vm->pc++;
@@ -213,15 +139,9 @@ void vm_dec( vm_struct_t *vm )
 
 void vm_and( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].signed_interger = (vm->registers[reg0].signed_interger & vm->registers[reg1].signed_interger);
     vm->pc++;
@@ -229,15 +149,9 @@ void vm_and( vm_struct_t *vm )
 
 void vm_or( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].unsigned_interger = (vm->registers[reg0].unsigned_interger | vm->registers[reg1].unsigned_interger);
     vm->pc++;
@@ -245,15 +159,9 @@ void vm_or( vm_struct_t *vm )
 
 void vm_xor( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].unsigned_interger = (vm->registers[reg0].unsigned_interger ^ vm->registers[reg1].unsigned_interger);
     vm->pc++;
@@ -261,15 +169,9 @@ void vm_xor( vm_struct_t *vm )
 
 void vm_shr( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
     uint32_t imm = vm_read_uint32_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
 
     vm->registers[reg1].unsigned_interger = (vm->registers[reg0].unsigned_interger >> imm);
     vm->pc++;
@@ -277,15 +179,9 @@ void vm_shr( vm_struct_t *vm )
 
 void vm_shl( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
     uint32_t imm = vm_read_uint32_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
 
     vm->registers[reg1].unsigned_interger = (vm->registers[reg0].unsigned_interger << imm);
     vm->pc++;
@@ -293,15 +189,9 @@ void vm_shl( vm_struct_t *vm )
 
 void vm_fadd( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].float_32bit = (vm->registers[reg0].float_32bit + vm->registers[reg1].float_32bit);
     vm->pc++;
@@ -309,15 +199,9 @@ void vm_fadd( vm_struct_t *vm )
 
 void vm_fsub( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].float_32bit = (vm->registers[reg0].float_32bit - vm->registers[reg1].float_32bit);
     vm->pc++;
@@ -325,15 +209,9 @@ void vm_fsub( vm_struct_t *vm )
 
 void vm_fmul( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].float_32bit = (vm->registers[reg0].float_32bit * vm->registers[reg1].float_32bit);
     vm->pc++;
@@ -341,15 +219,9 @@ void vm_fmul( vm_struct_t *vm )
 
 void vm_fdiv( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-    uint8_t reg2 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1) || VM_CHECK_REG_OVERFLOW(reg2))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
+    uint8_t reg2 = vm_read_register( vm );
 
     vm->registers[reg2].float_32bit = (vm->registers[reg0].float_32bit / vm->registers[reg1].float_32bit);
     vm->pc++;
@@ -357,34 +229,27 @@ void vm_fdiv( vm_struct_t *vm )
 
 void vm_fsqrt( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
 
     vm->registers[reg1].float_32bit = sqrtf( vm->registers[reg0].float_32bit );
     vm->pc++;
 }
 
+typedef union
+{
+    int i;
+    float f;
+} intfloat32_t;
+
 void vm_frsqrt( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-    uint8_t reg1 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0) || VM_CHECK_REG_OVERFLOW(reg1))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
+    uint8_t reg1 = vm_read_register( vm );
 
     if( isnan(vm->registers[reg0].float_32bit) || isinf(vm->registers[reg0].float_32bit) )
     {
         vm_error(vm, "infinite number");
-        return;
     }
 
     intfloat32_t intfloat = { 0 };
@@ -412,7 +277,6 @@ void vm_call( vm_struct_t *vm )
     if( imm >= vm->bytecode_len )
     {
         vm_error(vm, "imm overflow\nMax:%u\nIMM:%u\n", vm->bytecode_len, imm);
-        return;
     }
 
     vm_stack_push( vm, vm->pc );
@@ -427,7 +291,6 @@ void vm_ret( vm_struct_t *vm )
     if( pc >= vm->bytecode_len )
     {
         vm_error(vm, "pc overflow\nMax:%u\nPC:%u\n", vm->bytecode_len, pc);
-        return;
     }
 
     vm->pc = pc;
@@ -440,33 +303,9 @@ void vm_jump( vm_struct_t *vm )
     if( imm >= vm->bytecode_len )
     {
         vm_error(vm, "imm overflow\nMax:%u\nIMM:%u\n", vm->bytecode_len, imm);
-        return;
     }
 
     vm->pc = imm;
-}
-
-void vm_loop( vm_struct_t *vm )
-{
-    uint32_t imm = vm_read_uint32_t( vm );
-
-    if( imm >= vm->bytecode_len )
-    {
-        vm_error(vm, "imm overflow\nMax:%u\nIMM:%u\n", vm->bytecode_len, imm);
-        return;
-    }
-
-    if( vm->registers[VM_R16].unsigned_interger == 0 )
-    {
-        vm->pc++;
-        return;
-    }
-
-    if( vm->registers[VM_R16].unsigned_interger > 0 )
-    {
-        vm->registers[VM_R16].unsigned_interger--;
-        vm->pc = imm;
-    }
 }
 
 void vm_jz( vm_struct_t *vm )
@@ -479,7 +318,6 @@ void vm_jz( vm_struct_t *vm )
     if( imm >= vm->bytecode_len )
     {
         vm_error(vm, "imm overflow\nMax:%u\nIMM:%u\n", vm->bytecode_len, imm);
-        return;
     }
 
     vm->pc = imm;
@@ -495,7 +333,6 @@ void vm_jnz( vm_struct_t *vm )
     if( imm >= vm->bytecode_len )
     {
         vm_error(vm, "imm overflow\nBytecode len:%u\nIMM:%u\n", vm->bytecode_len, imm);
-        return;
     }
 
     vm->pc = imm;
@@ -503,37 +340,17 @@ void vm_jnz( vm_struct_t *vm )
 
 void vm_push( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
 
     vm_stack_push( vm, vm->registers[reg0].unsigned_interger );
-
-    if( vm->error )
-        return;
-
     vm->pc++;
 }
 
 void vm_pop( vm_struct_t *vm )
 {
-    uint8_t reg0 = vm_read_uint8_t( vm );
-
-    if(VM_CHECK_REG_OVERFLOW(reg0))
-    {
-        vm_error(vm, "register overflow");
-        return;
-    }
+    uint8_t reg0 = vm_read_register( vm );
 
     vm->registers[reg0].unsigned_interger = vm_stack_pop( vm );
-
-    if( vm->error )
-        return;
-
     vm->pc++;
 }
 
@@ -570,7 +387,6 @@ const instruction_t opcodes[VM_MAX_OPCODES] ={
     vm_call,
     vm_ret,
     vm_jump,
-    vm_loop,
     vm_jz,
     vm_jnz,
 

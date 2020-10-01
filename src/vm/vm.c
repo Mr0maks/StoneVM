@@ -11,8 +11,7 @@
 
 vm_struct_t *vm_init( void )
 {
-  vm_struct_t *ptr = malloc(sizeof(vm_struct_t));
-  memset(ptr, 0, sizeof (*ptr));
+  vm_struct_t *ptr = calloc(1, sizeof(vm_struct_t));
   return ptr;
 }
 
@@ -33,7 +32,23 @@ void vm_exec( vm_struct_t *vm )
     assert(vm);
     assert(vm->bytecode);
 
-    while (vm->halt == false && vm->error == false && vm->pc != vm->bytecode_len)
+    int code = setjmp(vm->jump_buffer);
+
+    switch (code) {
+    case 0: break;
+    case 1:
+    {
+        printf("vm error: %s\n", vm->error_string);
+        return;
+    }
+    case 2:
+    {
+        printf("unknown vm error\n");
+        return;
+    }
+    }
+
+    while (vm->pc != vm->bytecode_len)
     {
         uint8_t opcode = vm_read_uint8_t( vm );
 
@@ -45,35 +60,29 @@ void vm_exec( vm_struct_t *vm )
 
         if( opcodes[opcode] != NULL )
         {
-#ifdef DEBUG
-            printf("%u\n", opcode);
-#endif
             opcodes[opcode]( vm );
         } else {
             vm_error(vm, "opcode unimplemented");
             break;
         }
     }
-
-    if(vm->halt)
-        printf("vm error: halt call\n");
-    else if(vm->error && vm->error_string != NULL)
-        printf("vm error: %s\n", vm->error_string);
 }
 
 void vm_error( vm_struct_t *vm, const char *fmt, ... )
 {
+    vm->error = true;
+
     va_list va;
-    char buffer[8192];
     va_start(va, fmt);
-    int len = vsnprintf(buffer, sizeof (buffer), fmt, va);
+    int len = vsnprintf(vm->error_string, sizeof (vm->error_string), fmt, va);
     va_end(va);
 
     if (len < 0)
-        return;
+    {
+        longjmp(vm->jump_buffer, 2);
+    }
 
-    vm->error = true;
-    vm->error_string = buffer;
+    longjmp(vm->jump_buffer, 1);
 }
 
 void vm_free( vm_struct_t *vm )

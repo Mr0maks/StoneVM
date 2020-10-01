@@ -3,51 +3,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdbool.h>
-
-typedef enum
-{
-  VM_NOP,
-  VM_HALT,
-
-  VM_LOAD_REGISTER,
-  VM_LOAD_STRING,
-  VM_LOAD_DATA,
-  VM_SWAP,
-  VM_MOV,
-
-  //MATH
-  VM_ADD,
-  VM_SUB,
-  VM_MUL,
-  VM_DIV,
-  VM_INC,
-  VM_DEC,
-  VM_AND,
-  VM_OR,
-  VM_XOR,
-  VM_SHR,
-  VM_SHL,
-
-  //FLOAT MATH
-  VM_FADD,
-  VM_FSUB,
-  VM_FMUL,
-  VM_FDIV,
-  VM_FSQRT,
-  VM_FRSQRT,
-
-  VM_CMP,
-  VM_CALL,
-  VM_RET,
-  VM_JUMP,
-  VM_LOOP,
-  VM_JZ,
-  VM_JNZ,
-
-  VM_PUSH,
-  VM_POP,
-  VM_MAX_OPCODES = VM_POP + 1
-} vm_opcodes_t;
+#include <setjmp.h>
 
 enum
 {
@@ -67,7 +23,7 @@ enum
   VM_R13,
   VM_R14,
   VM_R15,
-  VM_R16, // pc
+  VM_R16,
   VM_R17, // stack pointer
   VM_R18,
   VM_R19,
@@ -107,14 +63,8 @@ int type;
 size_t len;
 } vm_register_data_t;
 
-typedef union
-{
-  int i;
-  float f;
-} intfloat32_t;
-
 // StoneVM Bytecode - SVMB
-//#define VM_BYTECODE_MAGIC 'SVMB'
+// #define VM_BYTECODE_MAGIC 'SVMB'
 #define VM_BYTECODE_MAGIC 0x424D5653
 // StoneVM Bytecode Version 0.1
 #define VM_BYTECODE_VERSION 1
@@ -131,18 +81,17 @@ typedef struct
 
 typedef struct
 {
-  bool halt;
   bool zflag;
   bool error;
-  const char *error_string;
+  char error_string[8192];
+  jmp_buf jump_buffer;
+
   uint32_t pc;
   uint8_t *bytecode;
   uint32_t bytecode_len;
   uint32_t stack[VM_MAX_STACK_SIZE];
   vm_register_data_t registers[VM_REG_COUNT];
 } vm_struct_t;
-
-#define VM_CHECK_REG_OVERFLOW(reg) ( reg >= VM_REG_COUNT )
 
 vm_struct_t *vm_init( void );
 void vm_load_bytecode( vm_struct_t *vm, uint8_t *bytecode, size_t bytecode_len );
