@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
+#include <err.h>
 
 #include "vm.h"
 #include "vm_opcodes.h"
@@ -32,30 +33,27 @@ void vm_exec( vm_struct_t *vm )
     assert(vm);
     assert(vm->bytecode);
 
-    int code = setjmp(vm->jump_buffer);
-
-    switch (code) {
+    switch (setjmp(vm->jump_buffer)) {
     case 0: break;
     case 1:
     {
         printf("vm error: %s\n", vm->error_string);
         return;
     }
-    case 2:
+    default:
     {
         printf("unknown vm error\n");
         return;
     }
     }
 
-    while (vm->pc != vm->bytecode_len)
+    while (vm->pc < vm->bytecode_len)
     {
         uint8_t opcode = vm_read_uint8_t( vm );
 
         if(opcode >= VM_MAX_OPCODES)
         {
             vm_error(vm, "opcode overflow");
-            break;
         }
 
         if( opcodes[opcode] != NULL )
@@ -70,6 +68,9 @@ void vm_exec( vm_struct_t *vm )
 
 void vm_error( vm_struct_t *vm, const char *fmt, ... )
 {
+    assert(vm);
+    assert(fmt);
+
     vm->error = true;
 
     va_list va;
@@ -79,7 +80,7 @@ void vm_error( vm_struct_t *vm, const char *fmt, ... )
 
     if (len < 0)
     {
-        longjmp(vm->jump_buffer, 2);
+        err(EXIT_FAILURE, "vsnprintf");
     }
 
     longjmp(vm->jump_buffer, 1);

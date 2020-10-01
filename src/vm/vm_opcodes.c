@@ -11,7 +11,8 @@ void vm_nop( vm_struct_t *vm )
 
 void vm_halt( vm_struct_t *vm )
 {
-    vm_error(vm, "halt instuction called");
+    //vm_error(vm, "halt instruction called");
+    vm->pc = vm->bytecode_len;
 }
 
 void vm_cmp( vm_struct_t *vm )
